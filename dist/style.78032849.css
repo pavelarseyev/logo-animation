@@ -1,0 +1,23 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+canvas {
+  display: block;
+}
+
+#container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 100vw;
+  height: 100vh;
+}
+
+
+/*# sourceMappingURL=/style.78032849.css.map */
