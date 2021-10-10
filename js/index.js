@@ -73,6 +73,7 @@ export default class Sketch {
       if (this.debug) {
         this.drawPreview();
         this.drawStaticCanvas();
+        this.addListeners();
       }
 
       this.addObjects();
@@ -97,9 +98,25 @@ export default class Sketch {
     this.camera.updateProjectionMatrix();
   }
 
+  addListeners() {
+      window.addEventListener('click', () => {
+          this.shuffleParticles();
+      });
+  }
+
+  shuffleParticles() {
+      this.parts.forEach(part => {
+          part.forEach(p => {
+              p.x = Math.random() * (this.imageWidth * this.spacing);
+              p.y = Math.random() * (this.imageHeight * this.spacing);
+          });
+      });
+  }
+
   createImageDataArrays(imagesArray) {
     let cnv = document.createElement("canvas");
     let ctx = cnv.getContext("2d");
+    this.maxSpeed = 2;
 
     imagesArray.forEach((image, index) => {
       this.parts[index] = [];
@@ -121,13 +138,15 @@ export default class Sketch {
             let red = data[offset];
             let green = data[offset + 1];
             let blue = data[offset + 2];
-            let rgba = `rgba(${red}, ${green}, ${blue}, ${alpha / 255})`;
+            let rgba = `rgba(${red}, ${green}, ${blue}, ${(alpha / 255).toFixed(2)})`;
 
             this.parts[index].push({
-              targetX: x,
-              targetY: y,
-              x: this.spacing * x,
-              y: this.spacing * y,
+              targetX: x * this.spacing,
+              targetY: y * this.spacing,
+              x: Math.random() * (this.imageWidth * this.spacing),
+              y: Math.random() * (this.imageHeight * this.spacing),
+              speed: Math.random() * 0.001 + 0.001,
+              velocity: Math.random() * 0.001 + 0.001,
               color: rgba,
             });
           }
@@ -161,7 +180,7 @@ export default class Sketch {
       part.forEach((p) => {
         ctx.save();
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x / this.spacing, p.y / this.spacing, 1, 1);
+        ctx.fillRect(p.targetX / this.spacing, p.targetY / this.spacing, 1, 1);
         ctx.restore();
       });
     });
@@ -187,14 +206,26 @@ export default class Sketch {
     this.staticCtx.clearRect(0, 0, this.staticCnv.width, this.staticCnv.width);
 
     this.parts.forEach((part) => {
-      part.forEach(({ x, y, color }, i) => {
+      part.forEach((p, i) => {
+        let dx = p.targetX - p.x;
+        let dy = p.targetY - p.y;
+
+        if (p.speed > this.maxSpeed) {
+            p.speed += p.velocity;
+        } else {
+            p.speed = this.maxSpeed;
+        }
+
+        p.x += (dx / p.speed) * 0.1;
+        p.y += (dy / p.speed) * 0.1;
+        
         this.staticCtx.save();
-        this.staticCtx.fillStyle = color;
+        this.staticCtx.fillStyle = p.color;
         this.staticCtx.fillRect(
-          x + Math.sin(y + this.time/10) * this.spacing*0.5,
-          y + Math.cos(x + this.time*5) * this.spacing,
-          3,
-          3
+            p.x + (Math.sin(i + this.time) * 0.5),
+            p.y + (Math.cos(i + this.time) * 3),
+            3,
+            3
         );
         this.staticCtx.restore();
       });
