@@ -36900,6 +36900,7 @@ var Sketch = /*#__PURE__*/function () {
 
     _classCallCheck(this, Sketch);
 
+    this.debug = options.debug;
     this.time = 0;
     this.container = options.dom;
     this.scene = new THREE.Scene();
@@ -36913,7 +36914,7 @@ var Sketch = /*#__PURE__*/function () {
     this.camera.near = 0.5;
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true // transparent background of the canv 
+      alpha: true // transparent background of the canv
 
     });
     this.renderer.setSize(this.width, this.height);
@@ -36923,6 +36924,10 @@ var Sketch = /*#__PURE__*/function () {
     this.imageHeight = 0;
     this.spacing = 5;
     this.parts = [];
+    this.lastTime = 0;
+    this.interval = 60 / 1000; // time in milliseconds to draw every frame
+
+    this.timer = 0;
     promisesArray.then(function (imagesArray) {
       _this.resize();
 
@@ -36930,16 +36935,22 @@ var Sketch = /*#__PURE__*/function () {
 
       _this.createImageDataArrays(imagesArray);
 
+      if (_this.debug) {
+        _this.drawPreview();
+
+        _this.drawStaticCanvas();
+      }
+
       _this.addObjects();
 
-      _this.render();
+      _this.render(0);
     });
   }
 
   _createClass(Sketch, [{
     key: "setupResize",
     value: function setupResize() {
-      window.addEventListener('resize', this.resize.bind(this));
+      window.addEventListener("resize", this.resize.bind(this));
     }
   }, {
     key: "resize",
@@ -36958,8 +36969,8 @@ var Sketch = /*#__PURE__*/function () {
     value: function createImageDataArrays(imagesArray) {
       var _this2 = this;
 
-      var cnv = document.createElement('canvas');
-      var ctx = cnv.getContext('2d');
+      var cnv = document.createElement("canvas");
+      var ctx = cnv.getContext("2d");
       imagesArray.forEach(function (image, index) {
         _this2.parts[index] = [];
         var w = _this2.imageWidth = cnv.width = image.width;
@@ -36990,10 +37001,72 @@ var Sketch = /*#__PURE__*/function () {
           }
         }
       });
-      console.log('parts for logo: ', this.parts);
-      console.log('total parts number: ', this.parts.reduce(function (acc, item, i, array) {
+      console.log("parts for logo: ", this.parts);
+      console.log("total parts number: ", this.parts.reduce(function (acc, item, i, array) {
         return acc + item.length;
       }, 0));
+    }
+  }, {
+    key: "drawPreview",
+    value: function drawPreview() {
+      var _this3 = this;
+
+      var cnv = document.createElement("canvas");
+      var ctx = cnv.getContext("2d");
+      var w = cnv.width = this.imageWidth;
+      var h = cnv.height = this.imageHeight;
+      cnv.style.width = "".concat(w / 2, "px");
+      cnv.style.height = "".concat(h / 2, "px");
+      cnv.style.position = "fixed";
+      cnv.style.top = "0";
+      cnv.style.left = "0";
+      cnv.style.border = "1px solid red";
+      cnv.style.pointerEvents = "none";
+      this.parts.forEach(function (part) {
+        part.forEach(function (p) {
+          ctx.save();
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x / _this3.spacing, p.y / _this3.spacing, 1, 1);
+          ctx.restore();
+        });
+      });
+      document.body.appendChild(cnv);
+    }
+  }, {
+    key: "drawStaticCanvas",
+    value: function drawStaticCanvas() {
+      this.staticCnv = document.createElement("canvas");
+      this.staticCtx = this.staticCnv.getContext("2d");
+      this.staticCnv.width = this.imageWidth * this.spacing;
+      this.staticCnv.height = this.imageHeight * this.spacing;
+      this.staticCnv.id = "static-canvas";
+      this.staticCnv.style.pointerEvents = "none";
+
+      if (!document.getElementById("static-canvas")) {
+        document.body.appendChild(this.staticCnv);
+      }
+    }
+  }, {
+    key: "updateStaticCanvas",
+    value: function updateStaticCanvas() {
+      var _this4 = this;
+
+      this.staticCtx.clearRect(0, 0, this.staticCnv.width, this.staticCnv.width);
+      this.parts.forEach(function (part) {
+        part.forEach(function (_ref, i) {
+          var x = _ref.x,
+              y = _ref.y,
+              color = _ref.color;
+
+          _this4.staticCtx.save();
+
+          _this4.staticCtx.fillStyle = color;
+
+          _this4.staticCtx.fillRect(x + Math.sin(i + _this4.time), y + Math.cos(i + _this4.time), 3, 3);
+
+          _this4.staticCtx.restore();
+        });
+      });
     }
   }, {
     key: "addObjects",
@@ -37010,13 +37083,22 @@ var Sketch = /*#__PURE__*/function () {
   }, {
     key: "updateObjects",
     value: function updateObjects() {
-      return false;
+      this.updateStaticCanvas();
     }
   }, {
     key: "render",
-    value: function render() {
-      this.time += 0.05;
-      this.updateObjects();
+    value: function render(timeStamp) {
+      var deltaTime = timeStamp - this.lastTime;
+      this.lastTime = timeStamp;
+
+      if (this.timer > this.interval) {
+        this.time += 0.05;
+        this.updateObjects();
+        this.timer = 0;
+      } else {
+        this.timer += deltaTime;
+      }
+
       this.renderer.render(this.scene, this.camera);
       window.requestAnimationFrame(this.render.bind(this));
     }
@@ -37027,6 +37109,7 @@ var Sketch = /*#__PURE__*/function () {
 
 exports.default = Sketch;
 new Sketch({
+  debug: true,
   dom: document.getElementById('container')
 });
 },{"three":"node_modules/three/build/three.module.js","three/examples/jsm/controls/OrbitControls.js":"node_modules/three/examples/jsm/controls/OrbitControls.js","../img/part1(top).png":"img/part1(top).png","../img/part2(bottom).png":"img/part2(bottom).png","../img/part3(line1).png":"img/part3(line1).png","../img/part4(line2).png":"img/part4(line2).png","../img/part5(line3).png":"img/part5(line3).png","../img/part6(text).png":"img/part6(text).png"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
@@ -37057,7 +37140,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62073" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64421" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
