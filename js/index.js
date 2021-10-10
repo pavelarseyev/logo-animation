@@ -62,7 +62,7 @@ export default class Sketch {
     this.spacing = 5;
     this.parts = [];
     this.lastTime = 0;
-    this.interval = 60 / 1000; // time in milliseconds to draw every frame
+    this.interval = 1000/60; // time in milliseconds to draw every frame
     this.timer = 0;
 
     promisesArray.then((imagesArray) => {
@@ -191,8 +191,8 @@ export default class Sketch {
         this.staticCtx.save();
         this.staticCtx.fillStyle = color;
         this.staticCtx.fillRect(
-          x + Math.sin(i + this.time),
-          y + Math.cos(i + this.time),
+          x + Math.sin(y + this.time/10) * this.spacing*0.5,
+          y + Math.cos(x + this.time*5) * this.spacing,
           3,
           3
         );
@@ -223,14 +223,13 @@ export default class Sketch {
     this.lastTime = timeStamp;
 
     if (this.timer > this.interval) {
-        this.time += 0.05;
+        this.time += 0.15;
         this.updateObjects();
 
         this.timer = 0;
     } else {
         this.timer += deltaTime;
     }
-
     this.renderer.render( this.scene, this.camera );
     window.requestAnimationFrame(this.render.bind(this));
   }
