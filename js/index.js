@@ -140,7 +140,7 @@ export default class Sketch {
         this.scene.add(cube);
     }
 
-    updateObjects() {
+    updateObjects() { 
         return false;
     }
 

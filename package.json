@@ -15,8 +15,8 @@
     "three": "^0.128.0"
   },
   "scripts": {
-    "serve": "npx parcel index.html --no-source-maps",
-    "build": "rimraf dist && npx parcel build index.html --no-source-maps"
+    "serve": "rimraf dist && npx parcel index.html --no-source-maps --no-cache",
+    "build": "rimraf dist && npx parcel build index.html --no-source-maps --no-cache --no-content-hash"
   },
   "author": "",
   "license": "ISC"
